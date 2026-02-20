@@ -22,7 +22,7 @@ router.post('/usuarios/login', loginUsuario);//url: http://localhost:3000/api/v1
 router.get('/usuarios/verificar', auth, verificarUsuario);//url: http://localhost:3000/api/v1/usuarios/verificar
 
 // Obtener todos los usuarios
-router.get('/usuarios', auth, getUsuarios);//url: http://localhost:3000/api/v1/usuarios
+router.get('/usuarios', getUsuarios);//url: http://localhost:3000/api/v1/usuarios
 
 // Obtener perfil de usuario
 router.get('/usuarios/perfil/:id', auth, getPerfilUsuario);//url: http://localhost:3000/api/v1/usuarios/perfil/:id

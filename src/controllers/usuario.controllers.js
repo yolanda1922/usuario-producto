@@ -1,6 +1,7 @@
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const Usuario = require('../models/usuario');
+const Cart = require('../models/cart');
 
 const registerUsuario = async (req, res) => {
 	try {
@@ -26,8 +27,21 @@ const registerUsuario = async (req, res) => {
 
 		const salt = await bcryptjs.genSalt(10);
 		const hashedPassword = await bcryptjs.hash(password, salt);
+		
+		// Crear usuario primero
 		const nuevoUsuario = await Usuario.create({ nombre, email, password: hashedPassword });
-		return res.status(201).json({ usuario: nuevoUsuario });
+		
+		// Luego crear carrito vinculado al usuario
+		const nuevoCart = await Cart.create({ usuario: nuevoUsuario._id, items: [], total: 0 });
+		
+		// Actualizar usuario con referencia al carrito
+		nuevoUsuario.cart = nuevoCart._id;
+		await nuevoUsuario.save();
+		
+		return res.status(201).json({ 
+			usuario: nuevoUsuario,
+			carrito: nuevoCart
+		});
 	} catch (error) {
 		return res.status(500).json({ message: 'Error al crear usuario', error: error.message });
 	}
@@ -76,7 +90,14 @@ const loginUsuario = async (req, res) => {
 const verificarUsuario = async (req, res) => {
 	try {
 		const { id } = req.user;
-		const usuarioEncontrado = await Usuario.findById(id).select('-password');
+		const usuarioEncontrado = await Usuario.findById(id)
+			.select('-password')
+			.populate({
+				path: 'cart',
+				populate: {
+					path: 'items.producto'
+				}
+			});
 		if (!usuarioEncontrado) {
 			return res.status(404).json({ message: 'Usuario no encontrado' });
 		}
@@ -91,7 +112,14 @@ const verificarUsuario = async (req, res) => {
 
 const getUsuarios = async (req, res) => {
 	try {
-		const usuarios = await Usuario.find({}).select('-password');
+		const usuarios = await Usuario.find({})
+			.select('-password')
+			.populate({
+				path: 'cart',
+				populate: {
+					path: 'items.producto'
+				}
+			});
 		return res.status(200).json({ usuarios });
 	} catch (error) {
 		return res.status(500).json({ message: 'Error al obtener usuarios', error: error.message });
@@ -101,7 +129,14 @@ const getUsuarios = async (req, res) => {
 const getPerfilUsuario = async (req, res) => {
 	try {
 		const { id } = req.params;
-		const usuarioEncontrado = await Usuario.findById(id).select('-password');
+		const usuarioEncontrado = await Usuario.findById(id)
+			.select('-password')
+			.populate({
+				path: 'cart',
+				populate: {
+					path: 'items.producto'
+				}
+			});
 		if (!usuarioEncontrado) {
 			return res.status(404).json({ message: 'Usuario no encontrado' });
 		}

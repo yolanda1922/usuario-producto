@@ -4,6 +4,7 @@ const usuarioSchema = new mongoose.Schema({
     nombre: { type: String, required: true, unique: true },
     email: { type: String, required: true, unique: true, minlength: 8 },
     password: { type: String, required: true },
+    cart: { type: mongoose.Schema.Types.ObjectId, ref: 'Cart' }
 },
     { timestamps: true }
 
