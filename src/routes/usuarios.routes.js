@@ -3,6 +3,7 @@ const auth = require('../middleware/auth');
 const {
     registerUsuario,
     loginUsuario,
+    logoutUsuario,
     verificarUsuario,
     getUsuarios,
     getPerfilUsuario,
@@ -17,6 +18,9 @@ router.post('/usuarios/register', registerUsuario);//url: http://localhost:3000/
 
 // Login usuario
 router.post('/usuarios/login', loginUsuario);//url: http://localhost:3000/api/v1/usuarios/login
+
+// Logout usuario
+router.post('/usuarios/logout', auth, logoutUsuario);//url: http://localhost:3000/api/v1/usuarios/logout
 
 // Verificar usuario autenticado
 router.get('/usuarios/verificar', auth, verificarUsuario);//url: http://localhost:3000/api/v1/usuarios/verificar

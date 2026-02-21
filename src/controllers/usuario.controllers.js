@@ -8,6 +8,9 @@ const registerUsuario = async (req, res) => {
 		const nombre = req.body.nombre || req.body.name;
 		const email = (req.body.email || req.body.correo)?.trim();
 		const password = req.body.password || req.body.contrasena;
+		const pais = req.body.pais;
+		const direccion = req.body.direccion;
+		const codigoPostal = req.body.codigoPostal;
 
 		const missingFields = [];
 		if (!nombre) missingFields.push('nombre');
@@ -29,7 +32,14 @@ const registerUsuario = async (req, res) => {
 		const hashedPassword = await bcryptjs.hash(password, salt);
 		
 		// Crear usuario primero
-		const nuevoUsuario = await Usuario.create({ nombre, email, password: hashedPassword });
+		const nuevoUsuario = await Usuario.create({ 
+			nombre, 
+			email, 
+			password: hashedPassword,
+			pais,
+			direccion,
+			codigoPostal
+		});
 		
 		// Luego crear carrito vinculado al usuario
 		const nuevoCart = await Cart.create({ usuario: nuevoUsuario._id, items: [], total: 0 });
@@ -73,6 +83,15 @@ const loginUsuario = async (req, res) => {
 		};
 
 		const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' });
+		
+		// Establecer cookie con el token
+		res.cookie('token', token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'strict',
+			maxAge: 3600000 // 1 hora en milisegundos
+		});
+		
 		return res.status(200).json({
 			token,
 			message: 'Login exitoso',
@@ -83,7 +102,9 @@ const loginUsuario = async (req, res) => {
 			}
 		});
 	} catch (error) {
-		return res.status(500).json({ message: 'Error al iniciar sesion', error: error.message });
+		const isProd = process.env.NODE_ENV === 'production';
+		const errorMessage = isProd ? 'Error al iniciar sesion' : `Error al iniciar sesion: ${error.message}`;
+		return res.status(500).json({ message: errorMessage });
 	}
 };
 
@@ -106,7 +127,9 @@ const verificarUsuario = async (req, res) => {
 			usuario: usuarioEncontrado
 		});
 	} catch (error) {
-		return res.status(500).json({ message: 'Error al verificar usuario', error: error.message });
+		const isProd = process.env.NODE_ENV === 'production';
+		const errorMessage = isProd ? 'Error al verificar usuario' : `Error al verificar usuario: ${error.message}`;
+		return res.status(500).json({ message: errorMessage });
 	}
 };
 
@@ -122,7 +145,9 @@ const getUsuarios = async (req, res) => {
 			});
 		return res.status(200).json({ usuarios });
 	} catch (error) {
-		return res.status(500).json({ message: 'Error al obtener usuarios', error: error.message });
+		const isProd = process.env.NODE_ENV === 'production';
+		const errorMessage = isProd ? 'Error al obtener usuarios' : `Error al obtener usuarios: ${error.message}`;
+		return res.status(500).json({ message: errorMessage });
 	}
 };
 
@@ -142,7 +167,9 @@ const getPerfilUsuario = async (req, res) => {
 		}
 		return res.status(200).json({ usuario: usuarioEncontrado });
 	} catch (error) {
-		return res.status(500).json({ message: 'Error al obtener perfil', error: error.message });
+		const isProd = process.env.NODE_ENV === 'production';
+		const errorMessage = isProd ? 'Error al obtener perfil' : `Error al obtener perfil: ${error.message}`;
+		return res.status(500).json({ message: errorMessage });
 	}
 };
 
@@ -152,6 +179,9 @@ const updateUsuario = async (req, res) => {
 		const { nombre } = req.body;
 		const email = req.body.email?.trim();
 		const password = req.body.password;
+		const pais = req.body.pais;
+		const direccion = req.body.direccion;
+		const codigoPostal = req.body.codigoPostal;
 
 		const updateData = {};
 		if (nombre) updateData.nombre = nombre;
@@ -160,6 +190,9 @@ const updateUsuario = async (req, res) => {
 			const salt = await bcryptjs.genSalt(10);
 			updateData.password = await bcryptjs.hash(password, salt);
 		}
+		if (pais) updateData.pais = pais;
+		if (direccion) updateData.direccion = direccion;
+		if (codigoPostal) updateData.codigoPostal = codigoPostal;
 
 		const usuarioActualizado = await Usuario.findByIdAndUpdate(
 			id,
@@ -172,7 +205,21 @@ const updateUsuario = async (req, res) => {
 		}
 		return res.status(200).json({ usuario: usuarioActualizado });
 	} catch (error) {
-		return res.status(500).json({ message: 'Error al actualizar usuario', error: error.message });
+		const isProd = process.env.NODE_ENV === 'production';
+		const errorMessage = isProd ? 'Error al actualizar usuario' : `Error al actualizar usuario: ${error.message}`;
+		return res.status(500).json({ message: errorMessage });
+	}
+};
+
+const logoutUsuario = async (req, res) => {
+	try {
+		// Limpiar la cookie del token
+		res.clearCookie('token');
+		return res.status(200).json({ message: 'Sesion cerrada correctamente' });
+	} catch (error) {
+		const isProd = process.env.NODE_ENV === 'production';
+		const errorMessage = isProd ? 'Error al cerrar sesion' : `Error al cerrar sesion: ${error.message}`;
+		return res.status(500).json({ message: errorMessage });
 	}
 };
 
@@ -185,7 +232,9 @@ const deleteUsuario = async (req, res) => {
 		}
 		return res.status(200).json({ message: 'Usuario eliminado correctamente' });
 	} catch (error) {
-		return res.status(500).json({ message: 'Error al eliminar usuario', error: error.message });
+		const isProd = process.env.NODE_ENV === 'production';
+		const errorMessage = isProd ? 'Error al eliminar usuario' : `Error al eliminar usuario: ${error.message}`;
+		return res.status(500).json({ message: errorMessage });
 	}
 };
 
@@ -196,5 +245,6 @@ module.exports = {
 	getUsuarios,
 	getPerfilUsuario,
 	updateUsuario,
+	logoutUsuario,
 	deleteUsuario
 };

@@ -1,6 +1,7 @@
 require('dotenv').config();
 const cors = require('cors');
 const express = require('express');
+const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const usuarioRouter = require('./routes/usuarios.routes');
 const productoRouter = require('./routes/productos.routes');
@@ -14,8 +15,15 @@ const app = express();
 connectDB();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: 'http://localhost:3000',
+    credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
+
+// Servir archivos estáticos
+app.use(express.static('public'));
 
 app.use('/api/v1', usuarioRouter);
 app.use('/api/v1', productoRouter);
